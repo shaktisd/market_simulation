@@ -22,6 +22,7 @@ export function Game() {
   const [selected, setSelected] = useState<{ type: InstrumentType; symbol: string } | null>(null);
   const [detail, setDetail] = useState<PriceWindow | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [orderOpen, setOrderOpen] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [bump, setBump] = useState(0);
@@ -41,10 +42,13 @@ export function Game() {
   useEffect(() => {
     if (!selected) {
       setDetail(null);
+      setDetailError(null);
       return;
     }
     let cancelled = false;
     setLoadingDetail(true);
+    setDetailError(null);
+    setDetail(null);
     (async () => {
       try {
         const d =
@@ -53,7 +57,7 @@ export function Game() {
             : await api.fundDetail(id, selected.symbol);
         if (!cancelled) setDetail(d);
       } catch (e: any) {
-        if (!cancelled) setError(e.message);
+        if (!cancelled) setDetailError(extractDetailMessage(e));
       } finally {
         if (!cancelled) setLoadingDetail(false);
       }
@@ -234,6 +238,19 @@ export function Game() {
                   <div className="h-[260px] flex items-center justify-center text-muted text-sm">
                     Loading price history…
                   </div>
+                ) : detailError ? (
+                  <div className="h-[260px] flex flex-col items-center justify-center text-center px-6 gap-3">
+                    <div className="text-warn text-sm font-medium">
+                      No data available for this {selected.type === "stock" ? "stock" : "fund"}
+                    </div>
+                    <div className="text-xs text-muted max-w-md">{detailError}</div>
+                    <button
+                      className="btn-ghost text-xs"
+                      onClick={() => setSelected(null)}
+                    >
+                      Back to portfolio
+                    </button>
+                  </div>
                 ) : (
                   <PriceChart points={detail?.points ?? []} />
                 )}
@@ -254,7 +271,7 @@ export function Game() {
                 <button
                   className="btn-success flex-1"
                   onClick={() => setOrderOpen(true)}
-                  disabled={!detail}
+                  disabled={!detail || !!detailError}
                 >
                   Buy / Sell
                 </button>
@@ -296,6 +313,13 @@ export function Game() {
       )}
     </div>
   );
+}
+
+function extractDetailMessage(e: unknown): string {
+  const raw = e instanceof Error ? e.message : String(e);
+  // Strip the "METHOD /path failed (status): " prefix added by the api wrapper
+  const m = raw.match(/failed \(\d+\):\s*(.*)$/s);
+  return (m ? m[1] : raw).trim();
 }
 
 function Fact({

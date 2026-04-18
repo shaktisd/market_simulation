@@ -20,10 +20,28 @@ interface Props {
   height?: number;
   /** When true, x-axis labels show raw numbers; when false, shown as tN */
   rawX?: boolean;
+  /** When true, rebase series to 100 at the first point so absolute levels aren't shown */
+  normalize?: boolean;
 }
 
-export function PriceChart({ points, color = "#4f8cff", height = 260, rawX = false }: Props) {
-  const data = useMemo(() => points.map((p) => ({ t: p.t, price: p.price })), [points]);
+export function PriceChart({
+  points,
+  color = "#4f8cff",
+  height = 260,
+  rawX = false,
+  normalize = false,
+}: Props) {
+  const data = useMemo(() => {
+    if (!points.length) return [];
+    const base = normalize ? points[0].price : 1;
+    if (normalize && base <= 0) {
+      return points.map((p) => ({ t: p.t, price: p.price }));
+    }
+    return points.map((p) => ({
+      t: p.t,
+      price: normalize ? (p.price / base) * 100 : p.price,
+    }));
+  }, [points, normalize]);
 
   if (!data.length)
     return (
@@ -57,8 +75,12 @@ export function PriceChart({ points, color = "#4f8cff", height = 260, rawX = fal
             tick={{ fill: "#8892a6", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
-            width={60}
-            tickFormatter={(v) => v.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            width={normalize ? 40 : 60}
+            tickFormatter={(v) =>
+              normalize
+                ? Number(v).toFixed(0)
+                : v.toLocaleString("en-IN", { maximumFractionDigits: 0 })
+            }
           />
           <Tooltip
             contentStyle={{
@@ -68,7 +90,11 @@ export function PriceChart({ points, color = "#4f8cff", height = 260, rawX = fal
               fontSize: 12,
             }}
             labelFormatter={(v) => (rawX ? `t=${v}` : `t${v}`)}
-            formatter={(v: number) => [v.toLocaleString("en-IN"), "Price"]}
+            formatter={(v: number) =>
+              normalize
+                ? [`${(v - 100).toFixed(2)}%`, "vs start"]
+                : [v.toLocaleString("en-IN"), "Price"]
+            }
           />
           <Line
             type="monotone"

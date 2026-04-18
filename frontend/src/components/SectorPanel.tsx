@@ -34,8 +34,10 @@ export function SectorPanel({ gameId, refreshKey }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="card card-pad">
-        <div className="text-xs text-muted uppercase tracking-wider mb-2">Nifty 50 · trailing window</div>
-        <PriceChart points={n50?.points || []} height={140} />
+        <div className="text-xs text-muted uppercase tracking-wider mb-2">
+          Nifty 50 · trailing window <span className="text-[10px] normal-case tracking-normal">(rebased to 100)</span>
+        </div>
+        <PriceChart points={n50?.points || []} height={140} normalize />
       </div>
 
       <div className="card overflow-hidden">
