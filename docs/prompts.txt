@@ -1,0 +1,3 @@
+New Feature: When clicking on next show the overall portfolio chart and the performance of the portfolio. X axis will have turns and y axis will have the value of the portfolio.
+Bug: Stock list is not showing all the stocks, it should have NIFTY 500 stocks. 
+New Feature: For mutual funds show all the mutual funds which are direct and growth.

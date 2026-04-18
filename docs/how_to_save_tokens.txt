@@ -1,0 +1,53 @@
+1: You upload PDFs raw. One page = 3,000 tokens.
+Fix: Paste the text into a Google doc. Download as .md format. Under 200 tokens.
+
+2: You build files inside Cowork too early.
+Fix: Plan in Chat first. Move to Cowork only when you know exactly what you want.
+
+3: You write 500-word prompts that reload.
+Fix: Write 29 words instead: "I want to [task] to [goal]. Ask me questions using AskUserQuestion."
+
+4: You say "redo the whole thing" to correct part 3.
+Fix: "Only redo section 3. Keep everything else. No commentary. Just the output."
+
+5: You send 3 separate messages for 3 tasks. 
+Fix: One message, three tasks. "Summarize this, list the points, suggest a headline."
+
+6: You type "No, I meant," stacking on the history.
+Fix: Click 'Edit' on your original message. Fix it. Regenerate. History replaced, not added.
+
+7: You use the Opus model for a grammar check. 
+Fix: Sonnet or Haiku for quick tasks. Save Opus + Extended Thinking for deep work.
+
+8: You dump 50 files into Cowork "just in case."
+Fix: Only include what this task needs. Zero folders for quick tasks like email drafts.
+
+9: You never restart fresh & keep having long chats.
+Fix: Every 15-20 messages → summarize, copy the brief, start a fresh session.
+
+10: You keep 3 topics in 1 chat. Claude re-reads all.
+Fix: New topic = new chat. Always. Dead context is dead tokens.
+
+11: Your about-me file is 22,000 words (too long).
+Fix: Trim to under 2,000 words. End sessions with "Write a session-notes.md."
+Paste my .md file prompt: https://ruben.substack.com/p/how-to-stop-hitting-claude-usage
+
+12: You leave search & connectors on by default.
+Fix: Default everything off. Turn features on per task, not per account.
+
+13: You upload the same PDF to 5 different chats. 
+Fix: Use Projects. Upload once. Every chat inside references it without re-burning tokens.
+
+14: You skip Personal Preferences & waste setup.
+Fix: Settings → Personal Preferences. Set your tone and style once. It persists forever.
+
+15: You rewrite prompts from scratch every time.
+Fix: Keep a prompt library. Same structure, swap the variable. Stable prompts get cached.
+
+16: You manually run the same report every week.
+Fix: Use /schedule. "Every Monday at 7am, create my weekly briefing." Wake up to a finished doc.
+
+17: You use Claude for things it can't do.
+Fix: Know your tools. Images → Gemini. 
+Real-time search → Grok. 
+Stop burning tokens on dead ends.

@@ -1,0 +1,26 @@
+Introduction
+Market Simulation is an investment simulation experience designed to provide a glimpse into 
+investing, emphasizing diversification and a long-term view.
+
+Getting Started
+Buy & Sell Assets
+
+To make an investment, choose from one of the options on the trade page  
+A details window will appear where you can learn more about the asset, its current price action, information about the company, and ticker-related news.
+
+If you'd like to purchase the asset, click the green Buy button at the bottom of the card and use the slide bar to select the number of shares. To sell the stock,
+come back to this same page and press the red Sell button.
+
+Move Forward
+
+Once you have made your investments, click the flashing  button in the bottom right corner of your screen to move to the next quarter.
+
+Measuring Performance
+
+Monitor your portfolio’s performance as it updates dynamically on the home  screen.
+
+
+Review
+Game Summary
+
+Once you've completed the game, you can review your portfolio performance, look at your most successful trades, and compare your results to other IQ players on the monthly leaderboard. Adjust your strategy and play again to keep improving!

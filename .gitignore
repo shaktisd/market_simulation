@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+.venv*
+
+# uv
+.uv/
+uv.lock
+
+# Database
+backend/data/*.sqlite
+backend/data/*.sqlite-*
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
