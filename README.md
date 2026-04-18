@@ -10,6 +10,11 @@ fundamentals. The period is revealed only when the game ends.
 - Full Indian market frictions: brokerage, STT, exchange, SEBI, stamp duty, GST, DP, STCG/LTCG
 - Local-only, no login, single user
 
+![alt text](image.png)
+-- 
+
+![alt text](image-1.png)
+
 ## Project layout
 
 ```
