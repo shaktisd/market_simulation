@@ -15,7 +15,6 @@ backend/data/*.sqlite-*
 
 # Node
 node_modules/
-frontend/dist/
 frontend/.vite/
 
 # Editors / OS
