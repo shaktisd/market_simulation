@@ -11,6 +11,7 @@ import { OrderDialog } from "@/components/OrderDialog";
 import { CompositionPanel } from "@/components/CompositionPanel";
 import { TurnAnalyticsPanel } from "@/components/TurnAnalytics";
 import { NavCurve } from "@/components/NavCurve";
+import { MarketMascot } from "@/components/MarketMascot";
 
 export function Game() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -322,6 +323,8 @@ export function Game() {
       </div>
 
       {progressPhase && <ProgressOverlay phase={progressPhase} />}
+
+      <MarketMascot gameId={id} refreshKey={bump} state={state} portfolio={portfolio} />
 
       {selected && detail && (
         <OrderDialog
