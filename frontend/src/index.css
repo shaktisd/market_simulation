@@ -53,3 +53,67 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* Tutorial overlay */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: auto;
+}
+.tutorial-mask {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+.tutorial-ring {
+  position: fixed;
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+  animation: tutorial-pulse 2s ease-in-out infinite;
+}
+@keyframes tutorial-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.1); }
+}
+.tutorial-tooltip {
+  position: fixed;
+  z-index: 10000;
+  background: #1a1207;
+  border: 1px solid #78350f;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  animation: tutorial-fade-in 0.2s ease-out;
+}
+@keyframes tutorial-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tutorial-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.tutorial-btn-primary {
+  background: #f59e0b;
+  color: #1a1207;
+}
+.tutorial-btn-primary:hover { background: #d97706; }
+.tutorial-btn-ghost {
+  background: transparent;
+  color: #fbbf24;
+  border: 1px solid #78350f;
+}
+.tutorial-btn-ghost:hover { background: #78350f; color: #fde68a; }

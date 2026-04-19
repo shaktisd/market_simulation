@@ -3,9 +3,11 @@ import { Home } from "@/pages/Home";
 import { Game } from "@/pages/Game";
 import { Results } from "@/pages/Results";
 import { History } from "@/pages/History";
+import { TutorialProvider, TutorialButton } from "@/components/Tutorial";
 
 export default function App() {
   return (
+    <TutorialProvider>
     <div className="min-h-full flex flex-col">
       <header className="sticky top-0 z-30 bg-bg/80 backdrop-blur border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -17,6 +19,7 @@ export default function App() {
           <nav className="flex items-center gap-1 text-sm">
             <Link to="/" className="btn-ghost">Home</Link>
             <Link to="/history" className="btn-ghost">History</Link>
+            <TutorialButton />
           </nav>
         </div>
       </header>
@@ -35,5 +38,6 @@ export default function App() {
         </div>
       </footer>
     </div>
+    </TutorialProvider>
   );
 }

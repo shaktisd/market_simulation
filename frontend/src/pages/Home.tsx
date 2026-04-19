@@ -23,7 +23,7 @@ export function Home() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10 sm:py-16">
-      <div className="mb-10 sm:mb-14">
+      <div className="mb-10 sm:mb-14" data-tutorial="home-hero">
         <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight mb-4">
           Learn the market by{" "}
           <span className="bg-gradient-to-r from-accent to-success bg-clip-text text-transparent">
@@ -37,7 +37,7 @@ export function Home() {
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4 mb-10">
+      <div className="grid sm:grid-cols-3 gap-4 mb-10" data-tutorial="home-tiles">
         <Tile title="Hidden history"
               body="A random time window between 1 and 10 years — somewhere after 2010. You won't know the dates until the game ends." />
         <Tile title="Real frictions"
@@ -50,7 +50,7 @@ export function Home() {
         <div className="text-xs text-muted uppercase tracking-wider mb-3">Start a new game</div>
         <div className="mb-4">
           <label className="block text-sm mb-2 text-muted">Each "Next" click advances by</label>
-          <div className="flex gap-2">
+          <div className="flex gap-2" data-tutorial="home-step-selector">
             {(["day", "week", "month"] as const).map((s) => (
               <button
                 key={s}
@@ -70,7 +70,7 @@ export function Home() {
             {error}
           </div>
         )}
-        <button className="btn-primary w-full" disabled={busy} onClick={start}>
+        <button className="btn-primary w-full" disabled={busy} onClick={start} data-tutorial="home-begin-btn">
           {busy ? "Starting…" : "Begin with ₹1,00,00,000"}
         </button>
         <p className="text-xs text-muted mt-3">

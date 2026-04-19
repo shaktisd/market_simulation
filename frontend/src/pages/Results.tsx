@@ -47,7 +47,7 @@ export function Results() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="card card-pad mb-6 bg-gradient-to-br from-panel to-panel2">
+      <div className="card card-pad mb-6 bg-gradient-to-br from-panel to-panel2" data-tutorial="results-reveal">
         <div className="text-xs text-muted uppercase tracking-wider mb-2">The Reveal</div>
         <div className="text-2xl sm:text-3xl font-semibold mb-1">
           You played from{" "}
@@ -59,7 +59,7 @@ export function Results() {
         </div>
       </div>
 
-      <div className="flex gap-1 mb-4 border-b border-border">
+      <div className="flex gap-1 mb-4 border-b border-border" data-tutorial="results-tabs">
         <TabButton active={tab === "overview"} onClick={() => setTab("overview")}>
           Overview
         </TabButton>
@@ -74,7 +74,7 @@ export function Results() {
         <OverviewTab result={result} chartData={chartData} pnl={pnl} startNav={startNav} />
       )}
 
-      <div className="flex flex-wrap gap-2 mt-6">
+      <div className="flex flex-wrap gap-2 mt-6" data-tutorial="results-actions">
         <Link to="/" className="btn-primary">Play again</Link>
         <Link to="/history" className="btn-ghost">See past runs</Link>
       </div>
@@ -103,7 +103,7 @@ function OverviewTab({
 }) {
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" data-tutorial="results-metrics">
         <Metric label="Final NAV" value={inr(result.final_nav)} strong />
         <Metric
           label="Total P&L"
@@ -130,7 +130,7 @@ function OverviewTab({
         />
       </div>
 
-      <div className="card card-pad mb-6">
+      <div className="card card-pad mb-6" data-tutorial="results-chart">
         <div className="flex items-center justify-between mb-3">
           <div className="font-semibold">Portfolio vs benchmarks</div>
           <div className="flex gap-4 text-xs tabular">
@@ -175,7 +175,7 @@ function OverviewTab({
         </div>
       </div>
 
-      <div className="card overflow-hidden mb-6">
+      <div className="card overflow-hidden mb-6" data-tutorial="results-trades">
         <div className="card-pad border-b border-border font-semibold">Trade log</div>
         <div className="overflow-x-auto max-h-96">
           <table className="w-full text-sm tabular">

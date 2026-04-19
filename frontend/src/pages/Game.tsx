@@ -154,7 +154,7 @@ export function Game() {
   return (
     <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 py-4">
       {/* Top bar */}
-      <div className="card card-pad mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="card card-pad mb-4 flex flex-wrap items-center justify-between gap-3" data-tutorial="game-topbar">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="shrink-0">
             <div className="text-xs text-muted">Turn</div>
@@ -183,7 +183,7 @@ export function Game() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-tutorial="game-controls">
           <button className="btn-ghost" onClick={endNow} disabled={advancing}>
             <Flag size={14} /> End
           </button>
@@ -193,13 +193,15 @@ export function Game() {
         </div>
       </div>
 
-      <RiskDashboard gameId={id} refreshKey={bump} />
+      <div data-tutorial="game-risk">
+        <RiskDashboard gameId={id} refreshKey={bump} />
+      </div>
 
       {/* Main 3-pane layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left: watchlist */}
         <div className="lg:col-span-4 flex flex-col gap-3 min-h-[400px] lg:h-[calc(100vh-200px)]">
-          <div className="flex gap-1 text-sm">
+          <div className="flex gap-1 text-sm" data-tutorial="game-tabs">
             {(["stock", "mf", "holdings"] as const).map((t) => (
               <button
                 key={t}
@@ -211,12 +213,14 @@ export function Game() {
             ))}
           </div>
           {tab === "stock" && (
-            <WatchlistTable
-              gameId={id}
-              instrumentType="stock"
-              onSelect={(s) => setSelected({ type: "stock", symbol: s })}
-              selectedSymbol={selected?.type === "stock" ? selected.symbol : undefined}
-            />
+            <div data-tutorial="game-watchlist">
+              <WatchlistTable
+                gameId={id}
+                instrumentType="stock"
+                onSelect={(s) => setSelected({ type: "stock", symbol: s })}
+                selectedSymbol={selected?.type === "stock" ? selected.symbol : undefined}
+              />
+            </div>
           )}
           {tab === "mf" && (
             <WatchlistTable
@@ -235,7 +239,7 @@ export function Game() {
         </div>
 
         {/* Center: detail */}
-        <div className="lg:col-span-5 flex flex-col gap-4">
+        <div className="lg:col-span-5 flex flex-col gap-4" data-tutorial="game-center">
           {!selected && (
             <div className="flex flex-col gap-4">
               <NavCurve gameId={id} refreshKey={bump} variant="hero" />
@@ -314,7 +318,7 @@ export function Game() {
         </div>
 
         {/* Right: market context + portfolio analytics */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
+        <div className="lg:col-span-3 flex flex-col gap-4" data-tutorial="game-right">
           {selected && (
             <>
               <NavCurve gameId={id} refreshKey={bump} />
@@ -322,12 +326,14 @@ export function Game() {
               <CompositionPanel gameId={id} refreshKey={bump} />
             </>
           )}
-          <AlgoLeaderboardLive
-            gameId={id}
-            refreshKey={bump}
-            userNav={state.nav}
-            startingNav={1_00_00_000}
-          />
+          <div data-tutorial="game-algo-live">
+            <AlgoLeaderboardLive
+              gameId={id}
+              refreshKey={bump}
+              userNav={state.nav}
+              startingNav={1_00_00_000}
+            />
+          </div>
           <SectorPanel gameId={id} refreshKey={bump} />
         </div>
       </div>
