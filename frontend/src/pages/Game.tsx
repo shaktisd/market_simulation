@@ -12,6 +12,7 @@ import { CompositionPanel } from "@/components/CompositionPanel";
 import { TurnAnalyticsPanel } from "@/components/TurnAnalytics";
 import { NavCurve } from "@/components/NavCurve";
 import { MarketMascot } from "@/components/MarketMascot";
+import { RiskDashboard } from "@/components/RiskDashboard";
 
 export function Game() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -191,6 +192,8 @@ export function Game() {
         </div>
       </div>
 
+      <RiskDashboard gameId={id} refreshKey={bump} />
+
       {/* Main 3-pane layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left: watchlist */}
@@ -338,6 +341,8 @@ export function Game() {
           cashAvailable={state.cash}
           navTotal={state.nav}
           quantityHeld={selectedHoldingQty}
+          holdings={portfolio?.holdings ?? []}
+          instrumentSector={detail.sector}
           onExecuted={async () => {
             await refreshState();
             setBump((b) => b + 1);

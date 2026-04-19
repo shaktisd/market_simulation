@@ -5,7 +5,8 @@
       "Bash(python -c \"from app.services.algos import STRATEGIES; print\\(list\\(STRATEGIES.keys\\(\\)\\)\\); from app.services.algos.simulator import run_strategy; print\\('simulator ok'\\)\")",
       "Bash(npx tsc *)",
       "Bash(python -c ' *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(uv run *)"
     ]
   }
 }

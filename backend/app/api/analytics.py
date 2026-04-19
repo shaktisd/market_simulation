@@ -1,19 +1,22 @@
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_active_game
 from app.core.db import get_db
-from app.models import Game, Holding, MFScheme, Order, Stock, TurnSnapshot
+from app.models import Game, Holding, IndexPrice, MFScheme, Order, Stock, TurnSnapshot
 from app.schemas import (
     CompositionResponse,
     CompositionSlice,
     HoldingMover,
     NavHistoryPoint,
     NavHistoryResponse,
+    RiskMetricsResponse,
     TurnAnalyticsResponse,
 )
 from app.services import pricing
@@ -190,4 +193,111 @@ def turn_analytics(
         net_invested_change=_round(net_invested),
         top_gainers=top_gainers,
         top_losers=top_losers,
+    )
+
+
+_ANN_FACTOR = {"day": 252, "week": 52, "month": 12}
+_RISK_FREE = 0.07
+
+
+@router.get("/{game_id}/risk-metrics", response_model=RiskMetricsResponse)
+def risk_metrics(
+    game: Game = Depends(get_active_game),
+    db: Session = Depends(get_db),
+) -> RiskMetricsResponse:
+    """Live portfolio risk dashboard. Volatility uses the last 30 turn returns;
+    beta pairs those returns against NIFTY50 close on the same snapshot dates;
+    HHI buckets current holdings plus cash."""
+    snaps = (
+        db.query(TurnSnapshot)
+        .filter(TurnSnapshot.game_id == game.id)
+        .order_by(TurnSnapshot.turn_index.asc())
+        .all()
+    )
+    nav_series = [s.nav for s in snaps]
+    dates = [s.hidden_date for s in snaps]
+
+    returns: list[float] = []
+    for i in range(1, len(nav_series)):
+        prev, cur = nav_series[i - 1], nav_series[i]
+        if prev > 0:
+            returns.append(cur / prev - 1)
+
+    ann_factor = _ANN_FACTOR.get(game.step_unit, 12)
+
+    vol_ann: float | None = None
+    tail = returns[-30:]
+    if len(tail) >= 2:
+        mean = sum(tail) / len(tail)
+        var = sum((r - mean) ** 2 for r in tail) / (len(tail) - 1)
+        vol_ann = math.sqrt(var) * math.sqrt(ann_factor)
+
+    beta: float | None = None
+    if len(returns) >= 2:
+        nifty: list[float | None] = []
+        for d in dates:
+            row = db.execute(
+                select(IndexPrice.close)
+                .where(IndexPrice.index_name == "NIFTY50", IndexPrice.date <= d)
+                .order_by(IndexPrice.date.desc())
+                .limit(1)
+            ).scalar_one_or_none()
+            nifty.append(float(row) if row is not None else None)
+
+        port_rets: list[float] = []
+        mkt_rets: list[float] = []
+        for i in range(1, len(dates)):
+            pn, cn = nifty[i - 1], nifty[i]
+            pp, cp = nav_series[i - 1], nav_series[i]
+            if pn and cn and pn > 0 and pp > 0:
+                port_rets.append(cp / pp - 1)
+                mkt_rets.append(cn / pn - 1)
+        if len(port_rets) >= 2:
+            mp = sum(port_rets) / len(port_rets)
+            mm = sum(mkt_rets) / len(mkt_rets)
+            cov = sum(
+                (port_rets[i] - mp) * (mkt_rets[i] - mm) for i in range(len(port_rets))
+            ) / (len(port_rets) - 1)
+            var_m = sum((r - mm) ** 2 for r in mkt_rets) / (len(mkt_rets) - 1)
+            if var_m > 1e-12:
+                beta = cov / var_m
+
+    drawdown: float | None = None
+    if nav_series:
+        all_navs = [game.starting_cash, *nav_series]
+        peak = max(all_navs)
+        last = nav_series[-1]
+        if peak > 0:
+            drawdown = (last - peak) / peak
+
+    on = game.current_date
+    holding_values: list[float] = []
+    for h in db.query(Holding).filter(Holding.game_id == game.id).all():
+        if h.quantity <= 0:
+            continue
+        if h.instrument_type == "stock":
+            p = pricing.price_on_or_before(db, h.symbol, on)
+        else:
+            p = pricing.mf_nav_on_or_before(db, int(h.symbol), on)
+        if p is not None:
+            holding_values.append(h.quantity * p)
+    holding_values.append(game.cash)
+    total = sum(holding_values)
+    hhi: float | None = None
+    if total > 0:
+        hhi = sum((v / total) ** 2 for v in holding_values)
+
+    sharpe: float | None = None
+    if len(returns) >= 2 and vol_ann and vol_ann > 1e-9:
+        mean_per_step = sum(returns) / len(returns)
+        ann_ret = (1 + mean_per_step) ** ann_factor - 1
+        sharpe = (ann_ret - _RISK_FREE) / vol_ann
+
+    return RiskMetricsResponse(
+        volatility_ann=round(vol_ann, 4) if vol_ann is not None else None,
+        beta=round(beta, 3) if beta is not None else None,
+        drawdown=round(drawdown, 4) if drawdown is not None else None,
+        hhi=round(hhi, 4) if hhi is not None else None,
+        sharpe=round(sharpe, 3) if sharpe is not None else None,
+        turns_observed=len(returns),
     )

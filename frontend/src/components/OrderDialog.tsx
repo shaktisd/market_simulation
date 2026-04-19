@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
-import { api, type InstrumentType, type OrderMode, type OrderResponse, type Side } from "@/lib/api";
+import {
+  api,
+  type Composition,
+  type HoldingOut,
+  type InstrumentType,
+  type OrderMode,
+  type OrderResponse,
+  type Side,
+} from "@/lib/api";
 import { inr, num } from "@/lib/format";
 
 interface Props {
@@ -14,6 +22,8 @@ interface Props {
   cashAvailable: number;
   navTotal: number;
   quantityHeld?: number;
+  holdings?: HoldingOut[];
+  instrumentSector?: string | null;
   onExecuted: (res: OrderResponse) => void;
 }
 
@@ -28,6 +38,8 @@ export function OrderDialog({
   cashAvailable,
   navTotal,
   quantityHeld = 0,
+  holdings = [],
+  instrumentSector = null,
   onExecuted,
 }: Props) {
   const isStock = instrumentType === "stock";
@@ -36,6 +48,7 @@ export function OrderDialog({
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [composition, setComposition] = useState<Composition | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -43,8 +56,9 @@ export function OrderDialog({
       setMode("weight");
       setInput("");
       setError(null);
+      api.composition(gameId).then(setComposition).catch(() => setComposition(null));
     }
-  }, [open, symbol]);
+  }, [open, symbol, gameId]);
 
   const valueNum = useMemo(() => {
     const n = parseFloat(input);
@@ -78,6 +92,95 @@ export function OrderDialog({
     : 0;
   const previewNet = side === "BUY" ? previewGross + estCharges : previewGross - estCharges;
   const previewWeight = navTotal > 0 ? (previewGross / navTotal) * 100 : 0;
+
+  const whatIf = useMemo(() => {
+    if (previewQty <= 0) return null;
+
+    const currentQty =
+      holdings.find(
+        (h) => h.instrument_type === instrumentType && h.symbol === symbol,
+      )?.quantity ?? 0;
+    const currentMv = currentQty * lastPrice;
+
+    const qtyDelta = side === "BUY" ? previewQty : -previewQty;
+    const newMv = Math.max(0, (currentQty + qtyDelta) * lastPrice);
+
+    const cashDelta = side === "BUY" ? -previewNet : previewNet;
+    const newCash = cashAvailable + cashDelta;
+    const newNav = Math.max(1, navTotal - estCharges);
+
+    const newStockWeight = (newMv / newNav) * 100;
+
+    // Sector exposure: current sector value + price-neutral delta from the traded stock
+    let newSectorWeight: number | null = null;
+    if (composition && instrumentSector) {
+      const slice = composition.by_sector.find((s) => s.label === instrumentSector);
+      const currentSectorValue = slice ? slice.value : 0;
+      const sectorDelta = side === "BUY" ? previewGross : -previewGross;
+      const newSectorValue = Math.max(0, currentSectorValue + sectorDelta);
+      newSectorWeight = (newSectorValue / newNav) * 100;
+    }
+
+    // HHI across (holdings after trade) + cash
+    const newValues: number[] = [];
+    let matched = false;
+    for (const h of holdings) {
+      const mv = h.quantity * h.last_price;
+      if (h.instrument_type === instrumentType && h.symbol === symbol) {
+        matched = true;
+        if (newMv > 0) newValues.push(newMv);
+      } else if (mv > 0) {
+        newValues.push(mv);
+      }
+    }
+    if (!matched && side === "BUY" && newMv > 0) newValues.push(newMv);
+    if (newCash > 0) newValues.push(newCash);
+    const total = newValues.reduce((a, b) => a + b, 0);
+    const newHhi =
+      total > 0 ? newValues.reduce((s, v) => s + (v / total) ** 2, 0) : null;
+
+    const currentStockWeight = navTotal > 0 ? (currentMv / navTotal) * 100 : 0;
+    const currentSectorWeight =
+      composition && instrumentSector
+        ? (composition.by_sector.find((s) => s.label === instrumentSector)?.weight ?? 0) *
+          100
+        : null;
+    const currentHhi = (() => {
+      const vals: number[] = [];
+      for (const h of holdings) {
+        const mv = h.quantity * h.last_price;
+        if (mv > 0) vals.push(mv);
+      }
+      if (cashAvailable > 0) vals.push(cashAvailable);
+      const t = vals.reduce((a, b) => a + b, 0);
+      return t > 0 ? vals.reduce((s, v) => s + (v / t) ** 2, 0) : null;
+    })();
+
+    return {
+      newCash,
+      newNav,
+      newStockWeight,
+      currentStockWeight,
+      newSectorWeight,
+      currentSectorWeight,
+      newHhi,
+      currentHhi,
+    };
+  }, [
+    previewQty,
+    previewNet,
+    previewGross,
+    estCharges,
+    holdings,
+    instrumentType,
+    symbol,
+    lastPrice,
+    side,
+    cashAvailable,
+    navTotal,
+    composition,
+    instrumentSector,
+  ]);
 
   if (!open) return null;
 
@@ -249,6 +352,47 @@ export function OrderDialog({
           </div>
         )}
 
+        {whatIf && (
+          <div className="rounded-lg bg-panel2 border border-border p-3 text-xs tabular mb-3">
+            <div className="text-[10px] text-muted uppercase tracking-wider mb-2">
+              After this trade
+            </div>
+            <div className="space-y-1.5">
+              <Delta
+                label="Cash"
+                before={inr(cashAvailable, { compact: true })}
+                after={inr(whatIf.newCash, { compact: true })}
+                warn={whatIf.newCash < 0}
+              />
+              <Delta
+                label={isStock ? "Weight in this stock" : "Weight in this fund"}
+                before={`${whatIf.currentStockWeight.toFixed(1)}%`}
+                after={`${whatIf.newStockWeight.toFixed(1)}%`}
+                warn={whatIf.newStockWeight > 25}
+                warnHint="over 25% — concentration risk"
+              />
+              {whatIf.newSectorWeight !== null && instrumentSector && (
+                <Delta
+                  label={`${instrumentSector} sector`}
+                  before={`${(whatIf.currentSectorWeight ?? 0).toFixed(1)}%`}
+                  after={`${whatIf.newSectorWeight.toFixed(1)}%`}
+                  warn={whatIf.newSectorWeight > 40}
+                  warnHint="over 40% — sector concentration"
+                />
+              )}
+              {whatIf.newHhi !== null && (
+                <Delta
+                  label="Concentration (HHI)"
+                  before={whatIf.currentHhi != null ? whatIf.currentHhi.toFixed(3) : "—"}
+                  after={whatIf.newHhi.toFixed(3)}
+                  warn={whatIf.newHhi > 0.4}
+                  warnHint="HHI > 0.4 is highly concentrated"
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         {valueNum > 0 && previewQty === 0 && (
           <div className="mb-3 text-xs text-warn bg-warn/10 border border-warn/40 rounded p-2">
             Resolved quantity is zero — not enough{" "}
@@ -303,6 +447,38 @@ function Row({
     <div className="flex items-center justify-between">
       <span className={sub ? "text-muted" : ""}>{label}</span>
       <span className={strong ? "font-semibold text-text" : ""}>{value}</span>
+    </div>
+  );
+}
+
+function Delta({
+  label,
+  before,
+  after,
+  warn = false,
+  warnHint,
+}: {
+  label: string;
+  before: string;
+  after: string;
+  warn?: boolean;
+  warnHint?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-muted truncate" title={warn ? warnHint : undefined}>
+        {label}
+      </span>
+      <span className="flex items-center gap-1.5 whitespace-nowrap">
+        <span className="text-muted">{before}</span>
+        <span className="text-muted">→</span>
+        <span
+          className={`font-semibold ${warn ? "text-warn" : "text-text"}`}
+          title={warn ? warnHint : undefined}
+        >
+          {after}
+        </span>
+      </span>
     </div>
   );
 }

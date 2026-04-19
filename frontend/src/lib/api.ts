@@ -174,6 +174,15 @@ export interface TurnAnalytics {
   top_losers: HoldingMover[];
 }
 
+export interface RiskMetrics {
+  volatility_ann: number | null;
+  beta: number | null;
+  drawdown: number | null;
+  hhi: number | null;
+  sharpe: number | null;
+  turns_observed: number;
+}
+
 export interface GameResult {
   game_id: number;
   revealed_start_date: string;
@@ -272,6 +281,7 @@ export const api = {
   composition: (id: number) => req<Composition>(`/game/${id}/composition`),
   turnAnalytics: (id: number) => req<TurnAnalytics>(`/game/${id}/turn-analytics`),
   navHistory: (id: number) => req<NavHistory>(`/game/${id}/nav-history`),
+  riskMetrics: (id: number) => req<RiskMetrics>(`/game/${id}/risk-metrics`),
   result: (id: number) => req<GameResult>(`/game/${id}/result`),
   algoResults: (id: number) => req<AlgoResults>(`/game/${id}/algo-results`),
   history: () => req<any[]>(`/history`),

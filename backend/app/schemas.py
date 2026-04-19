@@ -173,6 +173,19 @@ class TurnAnalyticsResponse(BaseModel):
     top_losers: list[HoldingMover]
 
 
+class RiskMetricsResponse(BaseModel):
+    """Live portfolio risk snapshot computed from TurnSnapshot history and
+    current holdings. Any field may be null when there isn't enough history
+    or data to compute it reliably."""
+
+    volatility_ann: float | None       # annualized stdev of last 30 turn returns
+    beta: float | None                 # portfolio beta vs NIFTY50 over played turns
+    drawdown: float | None             # current drawdown from peak NAV (0..-1)
+    hhi: float | None                  # Herfindahl index of holdings incl. cash (0..1)
+    sharpe: float | None               # (annualized return - 0.07) / annualized vol
+    turns_observed: int                # number of return observations backing the stats
+
+
 class NextTurnResponse(BaseModel):
     game_id: int
     turn_index: int
