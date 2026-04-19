@@ -61,6 +61,19 @@ class AlgoRunResult:
     rebalances: list[RebalanceEntry] = field(default_factory=list)
 
 
+@dataclass
+class AlgoRunInFlight:
+    """Mutable per-strategy state persisted between turns."""
+    cash: float
+    total_charges: float = 0.0
+    last_processed_date: date | None = None
+    last_rebalance_date: date | None = None
+    holdings: dict[str, float] = field(default_factory=dict)
+    avg_costs: dict[str, float] = field(default_factory=dict)
+    curve: list[tuple[date, float]] = field(default_factory=list)
+    rebalances: list[RebalanceEntry] = field(default_factory=list)
+
+
 class Strategy(Protocol):
     key: str
     display_name: str

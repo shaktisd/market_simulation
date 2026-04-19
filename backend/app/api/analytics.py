@@ -11,6 +11,7 @@ from app.api.deps import get_active_game
 from app.core.db import get_db
 from app.models import Game, Holding, IndexPrice, MFScheme, Order, Stock, TurnSnapshot
 from app.schemas import (
+    AlgoResultsResponse,
     CompositionResponse,
     CompositionSlice,
     HoldingMover,
@@ -20,6 +21,7 @@ from app.schemas import (
     TurnAnalyticsResponse,
 )
 from app.services import pricing
+from app.services.algos import live as algos_live
 
 router = APIRouter(prefix="/game", tags=["analytics"])
 
@@ -301,3 +303,12 @@ def risk_metrics(
         sharpe=round(sharpe, 3) if sharpe is not None else None,
         turns_observed=len(returns),
     )
+
+
+@router.get("/{game_id}/algo-results-live", response_model=AlgoResultsResponse)
+def algo_results_live(
+    game: Game = Depends(get_active_game),
+    db: Session = Depends(get_db),
+) -> AlgoResultsResponse:
+    """Live algo leaderboard during active play. Reads AlgoRunState rows."""
+    return algos_live.load_live_results(db, game)

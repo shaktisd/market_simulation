@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     fd_annual_rate: float = 0.07
     yf_start_date: str = "2008-01-01"
     enable_algo_strategies: bool = True
+    incremental_algos: bool = True
 
     @property
     def db_url(self) -> str:

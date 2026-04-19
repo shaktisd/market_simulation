@@ -31,6 +31,7 @@ from app.models import (
 )
 from app.services import pricing
 from app.services.algos import STRATEGIES, run_strategy
+from app.services.algos import live as algos_live
 from app.services.benchmarks import benchmark_curve_fd, benchmark_curve_index, cagr, max_drawdown
 from app.services.charges import charges_for
 from app.services.mf_api import ensure_nav_history
@@ -118,6 +119,12 @@ def start_game(db: Session, step_unit: StepUnit, seed: int | None = None) -> Gam
     db.flush()
 
     _snapshot(db, game)
+    if settings.enable_algo_strategies and settings.incremental_algos:
+        try:
+            algos_live.ensure_state_rows(db, game)
+            algos_live.advance_all_algos(db, game, game.current_date)
+        except Exception as e:  # noqa: BLE001
+            log.warning("algo init failed for game %d: %s", game.id, e)
     db.commit()
     log.info("Started game %d: %s -> %s (hidden)", game.id, start, end)
     return game
@@ -140,6 +147,11 @@ def next_turn(db: Session, game: Game) -> bool:
     game.current_date = proposed
     game.turn_index += 1
     _snapshot(db, game)
+    if settings.enable_algo_strategies and settings.incremental_algos:
+        try:
+            algos_live.advance_all_algos(db, game, game.current_date)
+        except Exception as e:  # noqa: BLE001
+            log.warning("algo advance failed for game %d turn %d: %s", game.id, game.turn_index, e)
     db.commit()
     return False
 
@@ -409,7 +421,10 @@ def _finalize(db: Session, game: Game) -> None:
     db.merge(result)
 
     if settings.enable_algo_strategies:
-        _run_algo_strategies(db, game)
+        if settings.incremental_algos:
+            algos_live.finalize_all_algos(db, game)
+        else:
+            _run_algo_strategies(db, game)
 
 
 def _run_algo_strategies(db: Session, game: Game) -> None:

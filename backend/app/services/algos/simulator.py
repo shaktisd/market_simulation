@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.services.algos.base import (
     AlgoHoldingSnapshot,
+    AlgoRunInFlight,
     AlgoRunResult,
     RebalanceEntry,
     Strategy,
@@ -115,6 +116,125 @@ def _allocate(
         holdings[t.symbol] = new_qty
         avg_costs[t.symbol] = (prev_cost + gross + c) / new_qty
     return cash, charges_total, trades
+
+
+def init_run_state(starting_cash: float) -> AlgoRunInFlight:
+    return AlgoRunInFlight(cash=float(starting_cash))
+
+
+def _next_rebalance_date(
+    last_rebal: date | None, first_rebal: date, every_days: int, up_to: date
+) -> date | None:
+    """Next rebalance date strictly after last_rebal, <= up_to."""
+    if last_rebal is None:
+        return first_rebal if first_rebal <= up_to else None
+    nxt = last_rebal + timedelta(days=every_days)
+    return nxt if nxt <= up_to else None
+
+
+def advance_run_state(
+    db: Session,
+    strategy: Strategy,
+    state: AlgoRunInFlight,
+    as_of: date,
+    starting_cash: float,
+    first_rebalance_date: date,
+    rebalance_days: int = 90,
+) -> None:
+    """Bring state up to `as_of`. Idempotent."""
+    if state.last_processed_date is not None and state.last_processed_date >= as_of:
+        return
+
+    universe_full = nifty500_symbols(db)
+
+    # Run any rebalances scheduled in (last_rebalance_date, as_of]
+    while True:
+        rd = _next_rebalance_date(
+            state.last_rebalance_date, first_rebalance_date, rebalance_days, as_of
+        )
+        if rd is None:
+            break
+
+        cash, c_sell, t_sell = _liquidate(db, state.holdings, state.cash, rd)
+        state.cash = cash
+        state.total_charges += c_sell
+
+        universe = tradable_on(db, rd, universe_full)
+        ctx = StrategyContext(db=db, as_of=rd, universe=universe)
+        try:
+            targets = strategy.select(ctx)
+        except Exception as e:  # noqa: BLE001
+            log.warning("strategy %s failed on %s: %s", strategy.key, rd, e)
+            targets = []
+
+        cash, c_buy, t_buy = _allocate(
+            db, targets, state.cash, rd, state.holdings, state.avg_costs
+        )
+        state.cash = cash
+        state.total_charges += c_buy
+
+        state.rebalances.append(
+            RebalanceEntry(
+                date=rd.isoformat(),
+                trades=t_sell + t_buy,
+                charges=round(c_sell + c_buy, 2),
+                symbols=[t.symbol for t in targets],
+            )
+        )
+        state.last_rebalance_date = rd
+
+    # Value at as_of and append curve point
+    if state.last_rebalance_date is None:
+        nav = starting_cash
+    else:
+        mv, _ = _value_holdings(db, state.holdings, as_of)
+        nav = state.cash + mv
+    state.curve.append((as_of, nav))
+    state.last_processed_date = as_of
+
+
+def finalize_run_state(
+    db: Session,
+    state: AlgoRunInFlight,
+    starting_cash: float,
+    start: date,
+    end: date,
+) -> AlgoRunResult:
+    mv_end, prices_end = _value_holdings(db, state.holdings, end)
+    final_nav = state.cash + mv_end if state.last_rebalance_date else starting_cash
+
+    snapshots: list[AlgoHoldingSnapshot] = []
+    for sym, qty in state.holdings.items():
+        if qty <= 0:
+            continue
+        p = prices_end.get(sym, 0.0)
+        mv = p * qty
+        weight = mv / final_nav if final_nav > 0 else 0.0
+        snapshots.append(
+            AlgoHoldingSnapshot(
+                symbol=sym,
+                qty=qty,
+                avg_cost=state.avg_costs.get(sym, 0.0),
+                last_price=p,
+                market_value=mv,
+                weight=weight,
+            )
+        )
+    snapshots.sort(key=lambda s: s.market_value, reverse=True)
+
+    days = max(1, (end - start).days)
+    port_cagr = cagr(starting_cash, final_nav, days)
+    mdd = max_drawdown([n for _, n in state.curve])
+
+    return AlgoRunResult(
+        final_nav=round(final_nav, 2),
+        cagr=round(port_cagr, 6),
+        max_drawdown=round(mdd, 6),
+        total_charges=round(state.total_charges, 2),
+        curve=list(state.curve),
+        holdings=snapshots,
+        rebalances=list(state.rebalances),
+    )
 
 
 def run_strategy(

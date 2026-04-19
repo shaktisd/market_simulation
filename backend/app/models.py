@@ -158,6 +158,22 @@ class AlgoStrategy(Base):
     description: Mapped[str] = mapped_column(Text)
 
 
+class AlgoRunState(Base):
+    __tablename__ = "algo_run_state"
+    game_id: Mapped[int] = mapped_column(Integer, ForeignKey("games.id"), primary_key=True)
+    strategy_key: Mapped[str] = mapped_column(
+        String(32), ForeignKey("algo_strategies.key"), primary_key=True
+    )
+    cash: Mapped[float] = mapped_column(Float)
+    total_charges: Mapped[float] = mapped_column(Float, default=0.0)
+    last_processed_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_rebalance_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    holdings_json: Mapped[str] = mapped_column(Text, default="{}")
+    avg_costs_json: Mapped[str] = mapped_column(Text, default="{}")
+    curve_json: Mapped[str] = mapped_column(Text, default="[]")
+    rebalance_log_json: Mapped[str] = mapped_column(Text, default="[]")
+
+
 class AlgoRun(Base):
     __tablename__ = "algo_runs"
     game_id: Mapped[int] = mapped_column(

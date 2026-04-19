@@ -284,5 +284,6 @@ export const api = {
   riskMetrics: (id: number) => req<RiskMetrics>(`/game/${id}/risk-metrics`),
   result: (id: number) => req<GameResult>(`/game/${id}/result`),
   algoResults: (id: number) => req<AlgoResults>(`/game/${id}/algo-results`),
+  algoResultsLive: (id: number) => req<AlgoResults>(`/game/${id}/algo-results-live`),
   history: () => req<any[]>(`/history`),
 };

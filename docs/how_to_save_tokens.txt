@@ -51,3 +51,29 @@ Fix: Use /schedule. "Every Monday at 7am, create my weekly briefing." Wake up to
 Fix: Know your tools. Images → Gemini. 
 Real-time search → Grok. 
 Stop burning tokens on dead ends.
+
+
+
+Most people complain about hitting Claude’s usage limits.
+
+But here’s the thing: Claude doesn’t count messages. It counts tokens.
+
+And some conversations burn through your limit 10x faster than others.
+
+After using it everyday, here are 8 tricks that changed everything for me:
+
+1️⃣ Edit, don’t resend. When Claude misses the mark, click edit on your original message. The old exchange gets replaced, not stacked. Over 10 rounds, this alone cuts token use by 80-90%.
+
+2️⃣ Start fresh every 15-20 messages. Claude re-reads the entire conversation history every single turn. By message 30, a simple question can cost 50,000+ tokens.
+
+3️⃣ Batch your questions. Three questions in one message = one context load instead of three. Better answers too, because Claude sees the full picture.
+
+4️⃣ Use Projects for recurring files. Stop re-uploading the same PDF across multiple chats. Projects cache your files so Claude doesn’t re-process them every time.
+
+5️⃣ Set up Memory & Custom Instructions. Store your role, tone, and preferences once. Claude carries them into every chat automatically.
+
+6️⃣ Turn off features you’re not using. Web search, connectors, Extended Thinking… they all add tokens even when you don’t need them.
+
+7️⃣ Pick the right model. Haiku for quick tasks. Sonnet for real work. Opus for the hard stuff. This is the single highest-impact decision you can make.
+
+8️⃣ Pace yourself. Claude runs on a rolling 5-hour window. Split your work into 2-3 sessions instead of one sprint and you can effectively get 150-200+ messages per day.

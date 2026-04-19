@@ -13,6 +13,7 @@ import { TurnAnalyticsPanel } from "@/components/TurnAnalytics";
 import { NavCurve } from "@/components/NavCurve";
 import { MarketMascot } from "@/components/MarketMascot";
 import { RiskDashboard } from "@/components/RiskDashboard";
+import { AlgoLeaderboardLive } from "@/components/AlgoLeaderboardLive";
 
 export function Game() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -321,6 +322,12 @@ export function Game() {
               <CompositionPanel gameId={id} refreshKey={bump} />
             </>
           )}
+          <AlgoLeaderboardLive
+            gameId={id}
+            refreshKey={bump}
+            userNav={state.nav}
+            startingNav={1_00_00_000}
+          />
           <SectorPanel gameId={id} refreshKey={bump} />
         </div>
       </div>
