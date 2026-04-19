@@ -120,6 +120,17 @@ Open **http://localhost:5173**.
 To start fresh, delete `backend/data/market.sqlite` and re-run the ingest
 script. (Past games are also wiped.)
 
+## New build
+### 1. Build the frontend bundle into frontend/dist/
+cd frontend
+npm install            # first time only
+npm run build
+
+### 2. Start the API + UI on one port
+cd ../backend
+uv run uvicorn app.main:app --port 8000
+
+
 ## License
 
 For educational use. Not investment advice.
