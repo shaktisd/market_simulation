@@ -135,22 +135,26 @@ def refresh_master_if_stale(db: Session) -> int:
             "last_refreshed": now,
         })
 
-    # Bulk upsert via SQLite-flavored INSERT OR REPLACE for speed (~10k rows).
+    # Bulk upsert in batches to stay under SQLite's variable-count limit.
     if rows:
         from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-        stmt = sqlite_insert(MFScheme).values(rows)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["scheme_code"],
-            set_={
-                "scheme_name": stmt.excluded.scheme_name,
-                "fund_house": stmt.excluded.fund_house,
-                "category": stmt.excluded.category,
-                "plan": stmt.excluded.plan,
-                "option": stmt.excluded.option,
-                "last_refreshed": stmt.excluded.last_refreshed,
-            },
-        )
-        db.execute(stmt)
+
+        BATCH = 500
+        for i in range(0, len(rows), BATCH):
+            batch = rows[i : i + BATCH]
+            stmt = sqlite_insert(MFScheme).values(batch)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["scheme_code"],
+                set_={
+                    "scheme_name": stmt.excluded.scheme_name,
+                    "fund_house": stmt.excluded.fund_house,
+                    "category": stmt.excluded.category,
+                    "plan": stmt.excluded.plan,
+                    "option": stmt.excluded.option,
+                    "last_refreshed": stmt.excluded.last_refreshed,
+                },
+            )
+            db.execute(stmt)
     db.commit()
     log.info("MF master refreshed: %d Direct-Growth schemes available", len(rows))
     return len(rows)
