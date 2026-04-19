@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity } from "lucide-react";
+import { Activity, ChevronDown, ChevronUp } from "lucide-react";
 import { api, type RiskMetrics } from "@/lib/api";
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
 
 export function RiskDashboard({ gameId, refreshKey }: Props) {
   const [data, setData] = useState<RiskMetrics | null>(null);
+  const [collapsed, setCollapsed] = useState(() => window.innerWidth < 1024);
 
   useEffect(() => {
     let mounted = true;
@@ -25,14 +26,26 @@ export function RiskDashboard({ gameId, refreshKey }: Props) {
 
   return (
     <div className="card overflow-hidden mb-4">
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border text-xs text-muted uppercase tracking-wider">
+      <button
+        className="w-full flex items-center gap-2 px-4 py-2 border-b border-border text-xs text-muted uppercase tracking-wider hover:bg-panel2/50 transition-colors"
+        onClick={() => setCollapsed((c) => !c)}
+      >
         <Activity size={13} />
         <span>Risk dashboard</span>
-        <span className="ml-auto normal-case tracking-normal text-[10px]">
-          {t < 2 ? "warming up…" : `${t} turn${t === 1 ? "" : "s"} observed`}
+        {collapsed && data && (
+          <span className="normal-case tracking-normal text-[10px] flex gap-3 ml-2">
+            <span>DD {fmtPct(data.drawdown)}</span>
+            <span>HHI {fmtNum(data.hhi, 3)}</span>
+            <span>Sharpe {fmtNum(data.sharpe, 2)}</span>
+          </span>
+        )}
+        <span className="ml-auto flex items-center gap-1 normal-case tracking-normal text-[10px]">
+          {t < 2 ? "warming up…" : `${t} turn${t === 1 ? "" : "s"}`}
+          {collapsed ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
         </span>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-border">
+      </button>
+      {!collapsed && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 divide-x divide-y sm:divide-y-0 divide-border">
         <Tile
           label="Volatility (ann.)"
           value={fmtPct(data?.volatility_ann)}
@@ -64,6 +77,7 @@ export function RiskDashboard({ gameId, refreshKey }: Props) {
           hint="(annualized return − 7% FD) / annualized vol. >1 is solid, >2 is excellent."
         />
       </div>
+      )}
     </div>
   );
 }

@@ -74,7 +74,7 @@ export function WatchlistTable({ gameId, instrumentType, onSelect, selectedSymbo
       </div>
 
       <div className="card flex-1 min-h-0">
-        <div className="overflow-auto h-full">
+        <div className="overflow-auto h-full max-h-[420px] lg:max-h-none">
           <table className="w-full text-xs tabular">
             <thead className="sticky top-0 bg-panel border-b border-border text-[10px] text-muted uppercase tracking-wider">
               <tr>

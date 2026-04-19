@@ -19,7 +19,8 @@ export function MarketMascot({ gameId, refreshKey, state, portfolio }: Props) {
     return v === null ? true : v === "true";
   });
   const [minimized, setMinimized] = useState<boolean>(() => {
-    return localStorage.getItem(MINIMIZED_KEY) === "true";
+    const v = localStorage.getItem(MINIMIZED_KEY);
+    return v === null ? true : v === "true";
   });
 
   useEffect(() => {

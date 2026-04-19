@@ -32,6 +32,7 @@ export function Game() {
   const progressTimerRef = useRef<number | null>(null);
   const [bump, setBump] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
 
   const refreshState = useCallback(async () => {
     const [s, p] = await Promise.all([api.state(id), api.portfolio(id)]);
@@ -49,6 +50,10 @@ export function Game() {
       setDetail(null);
       setDetailError(null);
       return;
+    }
+    // On mobile (single-col), scroll to the detail panel so user sees it
+    if (window.innerWidth < 1024 && detailRef.current) {
+      detailRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     let cancelled = false;
     setLoadingDetail(true);
@@ -200,7 +205,7 @@ export function Game() {
       {/* Main 3-pane layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left: watchlist */}
-        <div className="lg:col-span-4 flex flex-col gap-3 min-h-[400px] lg:h-[calc(100vh-200px)]">
+        <div className="lg:col-span-4 flex flex-col gap-3 max-h-[540px] lg:max-h-none min-h-[400px] lg:h-[calc(100vh-200px)]">
           <div className="flex gap-1 text-sm" data-tutorial="game-tabs">
             {(["stock", "mf", "holdings"] as const).map((t) => (
               <button
@@ -239,7 +244,7 @@ export function Game() {
         </div>
 
         {/* Center: detail */}
-        <div className="lg:col-span-5 flex flex-col gap-4" data-tutorial="game-center">
+        <div ref={detailRef} className="lg:col-span-5 flex flex-col gap-4" data-tutorial="game-center">
           {!selected && (
             <div className="flex flex-col gap-4">
               <NavCurve gameId={id} refreshKey={bump} variant="hero" />
