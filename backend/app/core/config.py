@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import zipfile
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -7,6 +8,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 DATA_DIR = BACKEND_DIR / "data"
 DATA_DIR.mkdir(exist_ok=True)
+
+# Unzip market.zip → market.sqlite if the DB doesn't exist yet (deploy scenario)
+_zip_path = DATA_DIR / "market.zip"
+_db_path = DATA_DIR / "market.sqlite"
+if _zip_path.is_file() and not _db_path.is_file():
+    with zipfile.ZipFile(_zip_path, "r") as zf:
+        zf.extractall(DATA_DIR)
 
 REPO_ROOT = BACKEND_DIR.parent
 UNIVERSE_CSV = REPO_ROOT / "docs" / "ind_nifty500list.csv"
