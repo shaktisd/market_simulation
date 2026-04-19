@@ -10,6 +10,7 @@ DATA_DIR.mkdir(exist_ok=True)
 
 REPO_ROOT = BACKEND_DIR.parent
 UNIVERSE_CSV = REPO_ROOT / "docs" / "ind_nifty500list.csv"
+FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
 
 class Settings(BaseSettings):
@@ -28,6 +29,7 @@ class Settings(BaseSettings):
     yf_start_date: str = "2008-01-01"
     enable_algo_strategies: bool = True
     incremental_algos: bool = True
+    frontend_dist: Path = FRONTEND_DIST
 
     @property
     def db_url(self) -> str:

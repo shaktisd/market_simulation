@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import api_router
 from app.core.config import settings
@@ -52,3 +54,28 @@ def health() -> dict:
 
 
 app.include_router(api_router)
+
+
+# ---- Serve the built frontend (Vite -> frontend/dist) ----
+# Run `npm run build` in /frontend to produce the bundle. If the dist folder
+# is missing (e.g. dev runs using the Vite dev server + proxy), these mounts
+# are skipped so the API still works standalone.
+_dist = settings.frontend_dist
+if _dist.is_dir() and (_dist / "index.html").is_file():
+    _assets_dir = _dist / "assets"
+    if _assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        # Let unknown /api/* requests 404 instead of returning the SPA shell.
+        if full_path == "api" or full_path.startswith("api/"):
+            raise HTTPException(status_code=404)
+        candidate = _dist / full_path
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(_dist / "index.html")
+else:
+    logging.getLogger(__name__).info(
+        "Frontend dist not found at %s — API-only mode (use Vite dev server).", _dist
+    )
