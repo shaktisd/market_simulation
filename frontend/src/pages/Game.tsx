@@ -367,7 +367,7 @@ function ProgressOverlay({ phase }: { phase: "advancing" | "finalizing" }) {
       <div className="card card-pad max-w-md w-full text-center flex flex-col items-center gap-4">
         <Loader2 className="animate-spin text-accent" size={36} />
         <div className="font-semibold text-lg">
-          {isFinalizing ? "Finalizing game…" : "Advancing turn…"}
+          {isFinalizing ? "Running Algo Strategies..." : "Advancing turn…"}
         </div>
         <div className="text-sm text-muted leading-relaxed">
           {isFinalizing ? (
