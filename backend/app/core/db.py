@@ -55,8 +55,13 @@ def session_scope() -> Iterator[Session]:
 
 def init_db() -> None:
     from app import models  # noqa: F401 — register mappers
+    from sqlalchemy.exc import OperationalError
 
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except OperationalError as e:
+        if "already exists" not in str(e):
+            raise
     _apply_lightweight_migrations()
 
 
