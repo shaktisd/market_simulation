@@ -11,13 +11,17 @@ import {
   CartesianGrid,
 } from "recharts";
 import { api, type GameResult } from "@/lib/api";
+import { AlgoStrategiesTab } from "@/components/AlgoStrategiesTab";
 import { classPnl, formatDate, inr, num, pct, pctFromRatio } from "@/lib/format";
+
+type TabKey = "overview" | "algos";
 
 export function Results() {
   const { gameId } = useParams<{ gameId: string }>();
   const id = Number(gameId);
   const [result, setResult] = useState<GameResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<TabKey>("overview");
 
   useEffect(() => {
     (async () => {
@@ -55,6 +59,50 @@ export function Results() {
         </div>
       </div>
 
+      <div className="flex gap-1 mb-4 border-b border-border">
+        <TabButton active={tab === "overview"} onClick={() => setTab("overview")}>
+          Overview
+        </TabButton>
+        <TabButton active={tab === "algos"} onClick={() => setTab("algos")}>
+          Algo Strategies
+        </TabButton>
+      </div>
+
+      {tab === "algos" ? (
+        <AlgoStrategiesTab gameId={id} userResult={result} />
+      ) : (
+        <OverviewTab result={result} chartData={chartData} pnl={pnl} startNav={startNav} />
+      )}
+
+      <div className="flex flex-wrap gap-2 mt-6">
+        <Link to="/" className="btn-primary">Play again</Link>
+        <Link to="/history" className="btn-ghost">See past runs</Link>
+      </div>
+
+      <p className="text-xs text-muted mt-6 max-w-3xl">
+        Note: the Nifty 500 universe used for trading is the <em>current</em> constituent list
+        applied across all historical periods. This introduces mild survivorship bias vs.
+        true reality. Fundamentals shown during play are best-effort snapshots and may not
+        reflect point-in-time values. Algo strategies rebalance every 90 days, pay the same
+        charges you do, and are shown gross of capital-gains tax.
+      </p>
+    </div>
+  );
+}
+
+function OverviewTab({
+  result,
+  chartData,
+  pnl,
+  startNav,
+}: {
+  result: GameResult;
+  chartData: any[];
+  pnl: number;
+  startNav: number;
+}) {
+  return (
+    <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Metric label="Final NAV" value={inr(result.final_nav)} strong />
         <Metric
@@ -176,19 +224,30 @@ export function Results() {
           </table>
         </div>
       </div>
+    </>
+  );
+}
 
-      <div className="flex flex-wrap gap-2">
-        <Link to="/" className="btn-primary">Play again</Link>
-        <Link to="/history" className="btn-ghost">See past runs</Link>
-      </div>
-
-      <p className="text-xs text-muted mt-6 max-w-3xl">
-        Note: the Nifty 500 universe used for trading is the <em>current</em> constituent list
-        applied across all historical periods. This introduces mild survivorship bias vs.
-        true reality. Fundamentals shown during play are best-effort snapshots and may not
-        reflect point-in-time values.
-      </p>
-    </div>
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+        active
+          ? "border-accent text-accent"
+          : "border-transparent text-muted hover:text-text"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

@@ -57,3 +57,21 @@ def init_db() -> None:
     from app import models  # noqa: F401 — register mappers
 
     Base.metadata.create_all(bind=engine)
+    _apply_lightweight_migrations()
+
+
+def _apply_lightweight_migrations() -> None:
+    """Add columns that were introduced after a DB was first created.
+
+    SQLAlchemy's create_all won't ALTER existing tables, so we handle
+    forward-compat column additions manually here.
+    """
+    from sqlalchemy import text
+
+    with engine.begin() as conn:
+        cols = {
+            r[1]
+            for r in conn.exec_driver_sql("PRAGMA table_info(stock_fundamentals)").fetchall()
+        }
+        if "roe" not in cols:
+            conn.exec_driver_sql("ALTER TABLE stock_fundamentals ADD COLUMN roe FLOAT")

@@ -206,3 +206,39 @@ class GameHistoryItem(BaseModel):
     final_nav: float
     cagr: float
     benchmark_nifty50_cagr: float | None
+
+
+class AlgoHoldingOut(BaseModel):
+    symbol: str
+    name: str
+    qty: float
+    avg_cost: float
+    last_price: float
+    market_value: float
+    weight: float
+
+
+class AlgoRebalanceEntry(BaseModel):
+    date: str
+    trades: int
+    charges: float
+    symbols: list[str]
+
+
+class AlgoStrategyResult(BaseModel):
+    key: str
+    display_name: str
+    description: str
+    final_nav: float
+    cagr: float
+    max_drawdown: float
+    total_charges: float
+    nav_curve: list[list]  # [[iso-date, nav], ...]
+    final_holdings: list[AlgoHoldingOut]
+    rebalance_log: list[AlgoRebalanceEntry]
+
+
+class AlgoResultsResponse(BaseModel):
+    game_id: int
+    starting_nav: float
+    strategies: list[AlgoStrategyResult]

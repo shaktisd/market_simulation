@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import api_router
 from app.core.config import settings
 from app.core.db import init_db, session_scope
+from app.services.algos import seed_catalog as seed_algo_catalog
 from app.services.mf_api import refresh_master_if_stale
 
 logging.basicConfig(
@@ -33,6 +34,11 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    try:
+        with session_scope() as db:
+            seed_algo_catalog(db)
+    except Exception as e:  # noqa: BLE001
+        logging.getLogger(__name__).warning("Algo catalog seed failed: %s", e)
     try:
         with session_scope() as db:
             refresh_master_if_stale(db)

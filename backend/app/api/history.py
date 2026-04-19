@@ -7,8 +7,24 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_any_game
 from app.core.db import get_db
-from app.models import Game, GameResult, Order, Stock, MFScheme, TurnSnapshot
-from app.schemas import GameHistoryItem, GameResultResponse
+from app.models import (
+    AlgoRun,
+    AlgoStrategy as AlgoStrategyModel,
+    Game,
+    GameResult,
+    MFScheme,
+    Order,
+    Stock,
+    TurnSnapshot,
+)
+from app.schemas import (
+    AlgoHoldingOut,
+    AlgoRebalanceEntry,
+    AlgoResultsResponse,
+    AlgoStrategyResult,
+    GameHistoryItem,
+    GameResultResponse,
+)
 from app.services.benchmarks import benchmark_curve_fd, benchmark_curve_index
 
 router = APIRouter(tags=["history"])
@@ -103,6 +119,71 @@ def game_result(
         portfolio_curve=portfolio_curve,
         benchmark_curves={"NIFTY50": n50, "NIFTY500": n500, "FD_7PCT": fd},
         trade_log=trade_log,
+    )
+
+
+@router.get("/game/{game_id}/algo-results", response_model=AlgoResultsResponse)
+def algo_results(
+    game: Game = Depends(get_any_game),
+    db: Session = Depends(get_db),
+) -> AlgoResultsResponse:
+    if game.status != "ended":
+        raise HTTPException(400, "Game not yet ended")
+
+    runs = (
+        db.query(AlgoRun, AlgoStrategyModel)
+        .join(AlgoStrategyModel, AlgoStrategyModel.key == AlgoRun.strategy_key)
+        .filter(AlgoRun.game_id == game.id)
+        .order_by(AlgoRun.strategy_key.asc())
+        .all()
+    )
+
+    stock_names = {s.symbol: s.company_name for s in db.query(Stock).all()}
+
+    out: list[AlgoStrategyResult] = []
+    for run, strat in runs:
+        holdings_raw = json.loads(run.final_holdings_json or "[]")
+        holdings = [
+            AlgoHoldingOut(
+                symbol=h["symbol"],
+                name=stock_names.get(h["symbol"], h["symbol"]),
+                qty=round(h["qty"], 4),
+                avg_cost=round(h["avg_cost"], 2),
+                last_price=round(h["last_price"], 2),
+                market_value=round(h["market_value"], 2),
+                weight=round(h["weight"], 6),
+            )
+            for h in holdings_raw
+        ]
+        rebalance = [
+            AlgoRebalanceEntry(
+                date=r["date"],
+                trades=r["trades"],
+                charges=r["charges"],
+                symbols=r.get("symbols", []),
+            )
+            for r in json.loads(run.rebalance_log_json or "[]")
+        ]
+        out.append(
+            AlgoStrategyResult(
+                key=run.strategy_key,
+                display_name=strat.display_name,
+                description=strat.description,
+                final_nav=run.final_nav,
+                cagr=run.cagr,
+                max_drawdown=run.max_drawdown,
+                total_charges=run.total_charges,
+                nav_curve=json.loads(run.nav_curve_json or "[]"),
+                final_holdings=holdings,
+                rebalance_log=rebalance,
+            )
+        )
+    out.sort(key=lambda r: r.cagr, reverse=True)
+
+    return AlgoResultsResponse(
+        game_id=game.id,
+        starting_nav=round(game.starting_cash, 2),
+        strategies=out,
     )
 
 

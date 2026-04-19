@@ -192,6 +192,42 @@ export interface GameResult {
 
 export interface BenchmarkSeries { name: string; points: PricePoint[]; }
 
+export interface AlgoHolding {
+  symbol: string;
+  name: string;
+  qty: number;
+  avg_cost: number;
+  last_price: number;
+  market_value: number;
+  weight: number;
+}
+
+export interface AlgoRebalanceEntry {
+  date: string;
+  trades: number;
+  charges: number;
+  symbols: string[];
+}
+
+export interface AlgoStrategyResult {
+  key: string;
+  display_name: string;
+  description: string;
+  final_nav: number;
+  cagr: number;
+  max_drawdown: number;
+  total_charges: number;
+  nav_curve: [string, number][];
+  final_holdings: AlgoHolding[];
+  rebalance_log: AlgoRebalanceEntry[];
+}
+
+export interface AlgoResults {
+  game_id: number;
+  starting_nav: number;
+  strategies: AlgoStrategyResult[];
+}
+
 export const api = {
   startGame: (step_unit: StepUnit) =>
     req<GameState>(`/game/start`, { method: "POST", body: JSON.stringify({ step_unit }) }),
@@ -237,5 +273,6 @@ export const api = {
   turnAnalytics: (id: number) => req<TurnAnalytics>(`/game/${id}/turn-analytics`),
   navHistory: (id: number) => req<NavHistory>(`/game/${id}/nav-history`),
   result: (id: number) => req<GameResult>(`/game/${id}/result`),
+  algoResults: (id: number) => req<AlgoResults>(`/game/${id}/algo-results`),
   history: () => req<any[]>(`/history`),
 };

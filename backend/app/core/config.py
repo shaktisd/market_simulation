@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     mf_master_ttl_hours: int = 24
     fd_annual_rate: float = 0.07
     yf_start_date: str = "2008-01-01"
+    enable_algo_strategies: bool = True
 
     @property
     def db_url(self) -> str:

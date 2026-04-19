@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { api, type InstrumentInfo, type InstrumentType } from "@/lib/api";
-import { classPnl, inr, pct } from "@/lib/format";
+import { classPnl, num, pct } from "@/lib/format";
 
 interface Props {
   gameId: number;
@@ -73,29 +73,29 @@ export function WatchlistTable({ gameId, instrumentType, onSelect, selectedSymbo
         </select>
       </div>
 
-      <div className="card overflow-hidden flex-1 min-h-0">
-        <div className="overflow-y-auto h-full">
-          <table className="w-full text-sm tabular">
-            <thead className="sticky top-0 bg-panel border-b border-border text-xs text-muted uppercase tracking-wider">
+      <div className="card flex-1 min-h-0">
+        <div className="overflow-auto h-full">
+          <table className="w-full text-xs tabular">
+            <thead className="sticky top-0 bg-panel border-b border-border text-[10px] text-muted uppercase tracking-wider">
               <tr>
-                <th className="text-left px-3 py-2 font-medium">Name</th>
-                <th className="text-right px-3 py-2 font-medium">Price</th>
-                <th className="text-right px-3 py-2 font-medium hidden sm:table-cell">1M</th>
-                <th className="text-right px-3 py-2 font-medium hidden md:table-cell">6M</th>
-                <th className="text-right px-3 py-2 font-medium">12M</th>
+                <th className="text-left px-1.5 py-2 font-medium">Name</th>
+                <th className="text-right px-1.5 py-2 font-medium">Price (₹)</th>
+                <th className="text-right px-1.5 py-2 font-medium">1M</th>
+                <th className="text-right px-1.5 py-2 font-medium">6M</th>
+                <th className="text-right px-1.5 py-2 font-medium">12M</th>
               </tr>
             </thead>
             <tbody>
               {loading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-10 text-center text-muted text-xs">
+                  <td colSpan={5} className="px-1.5 py-10 text-center text-muted text-xs">
                     Loading…
                   </td>
                 </tr>
               )}
               {!loading && sorted.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-10 text-center text-muted text-xs">
+                  <td colSpan={5} className="px-1.5 py-10 text-center text-muted text-xs">
                     No matching instruments.
                   </td>
                 </tr>
@@ -110,22 +110,22 @@ export function WatchlistTable({ gameId, instrumentType, onSelect, selectedSymbo
                       sel ? "bg-panel2" : "hover:bg-panel2/60"
                     }`}
                   >
-                    <td className="px-3 py-2">
-                      <div className="font-medium truncate max-w-[220px]">{r.name}</div>
-                      <div className="text-xs text-muted">
+                    <td className="px-1.5 py-2">
+                      <div className="font-medium truncate max-w-[130px]">{r.name}</div>
+                      <div className="text-[10px] text-muted truncate max-w-[130px]">
                         {instrumentType === "stock" ? r.symbol : r.sector || "—"}
                       </div>
                     </td>
-                    <td className="text-right px-3 py-2">
-                      {r.last_price != null ? inr(r.last_price) : "—"}
+                    <td className="text-right px-1.5 py-2 whitespace-nowrap">
+                      {r.last_price != null ? num(r.last_price) : "—"}
                     </td>
-                    <td className={`text-right px-3 py-2 hidden sm:table-cell ${classPnl(r.change_pct_1m)}`}>
+                    <td className={`text-right px-1.5 py-2 whitespace-nowrap ${classPnl(r.change_pct_1m)}`}>
                       {pct(r.change_pct_1m)}
                     </td>
-                    <td className={`text-right px-3 py-2 hidden md:table-cell ${classPnl(r.change_pct_6m)}`}>
+                    <td className={`text-right px-1.5 py-2 whitespace-nowrap ${classPnl(r.change_pct_6m)}`}>
                       {pct(r.change_pct_6m)}
                     </td>
-                    <td className={`text-right px-3 py-2 ${classPnl(r.change_pct_12m)}`}>
+                    <td className={`text-right px-1.5 py-2 whitespace-nowrap ${classPnl(r.change_pct_12m)}`}>
                       {pct(r.change_pct_12m)}
                     </td>
                   </tr>

@@ -32,7 +32,7 @@ export function OrderDialog({
 }: Props) {
   const isStock = instrumentType === "stock";
   const [side, setSide] = useState<Side>("BUY");
-  const [mode, setMode] = useState<OrderMode>("qty");
+  const [mode, setMode] = useState<OrderMode>("weight");
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -40,7 +40,7 @@ export function OrderDialog({
   useEffect(() => {
     if (open) {
       setSide("BUY");
-      setMode("qty");
+      setMode("weight");
       setInput("");
       setError(null);
     }
@@ -107,7 +107,7 @@ export function OrderDialog({
     mode === "qty"
       ? isStock ? "e.g., 10" : "e.g., 125.5"
       : mode === "weight"
-        ? "e.g., 5  (=5% of NAV)"
+        ? "e.g., 5  (=5% of Portfolio)"
         : "e.g., 50000  (=₹50,000)";
 
   return (
@@ -159,7 +159,7 @@ export function OrderDialog({
 
         <div className="text-xs text-muted mb-1">Order by</div>
         <div className="grid grid-cols-3 gap-1 mb-3 p-1 bg-panel2 border border-border rounded-lg">
-          {(["qty", "weight", "value"] as const).map((m) => (
+          {(["weight", "qty", "value"] as const).map((m) => (
             <button
               key={m}
               className={`text-xs py-1.5 rounded-md transition-colors ${
@@ -170,7 +170,7 @@ export function OrderDialog({
                 setInput("");
               }}
             >
-              {m === "qty" ? "Quantity" : m === "weight" ? "% of NAV" : "₹ Value"}
+              {m === "qty" ? "Quantity" : m === "weight" ? "% of Portfolio" : "₹ Value"}
             </button>
           ))}
         </div>

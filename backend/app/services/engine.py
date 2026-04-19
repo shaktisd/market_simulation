@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.models import (
+    AlgoRun,
     Game,
     GameResult,
     Holding,
@@ -29,6 +30,7 @@ from app.models import (
     TurnSnapshot,
 )
 from app.services import pricing
+from app.services.algos import STRATEGIES, run_strategy
 from app.services.benchmarks import benchmark_curve_fd, benchmark_curve_index, cagr, max_drawdown
 from app.services.charges import charges_for
 from app.services.mf_api import ensure_nav_history
@@ -405,3 +407,53 @@ def _finalize(db: Session, game: Game) -> None:
         revealed_end_date=game.hidden_end_date,
     )
     db.merge(result)
+
+    if settings.enable_algo_strategies:
+        _run_algo_strategies(db, game)
+
+
+def _run_algo_strategies(db: Session, game: Game) -> None:
+    """Compute each algo strategy over the game window and persist results."""
+    import json as _json
+    import time as _time
+
+    from dataclasses import asdict as _asdict
+
+    for strat in STRATEGIES.values():
+        t0 = _time.perf_counter()
+        try:
+            res = run_strategy(
+                db,
+                strat,
+                game.hidden_start_date,
+                game.hidden_end_date,
+                game.starting_cash,
+            )
+        except Exception as e:  # noqa: BLE001
+            log.warning("algo %s failed for game %d: %s", strat.key, game.id, e)
+            continue
+        elapsed = _time.perf_counter() - t0
+
+        curve_json = _json.dumps(
+            [[d.isoformat(), round(n, 2)] for d, n in res.curve]
+        )
+        holdings_json = _json.dumps([_asdict(h) for h in res.holdings])
+        rebalance_json = _json.dumps([_asdict(r) for r in res.rebalances])
+
+        db.merge(
+            AlgoRun(
+                game_id=game.id,
+                strategy_key=strat.key,
+                final_nav=res.final_nav,
+                cagr=res.cagr,
+                max_drawdown=res.max_drawdown,
+                total_charges=res.total_charges,
+                nav_curve_json=curve_json,
+                final_holdings_json=holdings_json,
+                rebalance_log_json=rebalance_json,
+            )
+        )
+        log.info(
+            "algo %s: final_nav=%.0f cagr=%.3f (%.2fs)",
+            strat.key, res.final_nav, res.cagr, elapsed,
+        )

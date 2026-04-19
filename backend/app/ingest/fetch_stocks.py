@@ -134,6 +134,7 @@ def fetch_stocks() -> None:
                         pb=_safe(info.get("priceToBook")),
                         eps=_safe(info.get("trailingEps")),
                         market_cap=_safe(info.get("marketCap")),
+                        roe=_safe(info.get("returnOnEquity")),
                     ))
                 except Exception:  # noqa: BLE001 — fundamentals are best-effort
                     pass

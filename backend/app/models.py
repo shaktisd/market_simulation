@@ -45,6 +45,7 @@ class StockFundamental(Base):
     pb: Mapped[float | None] = mapped_column(Float, nullable=True)
     eps: Mapped[float | None] = mapped_column(Float, nullable=True)
     market_cap: Mapped[float | None] = mapped_column(Float, nullable=True)
+    roe: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
 class IndexPrice(Base):
@@ -148,3 +149,27 @@ class GameResult(Base):
     benchmark_fd_cagr: Mapped[float | None] = mapped_column(Float, nullable=True)
     revealed_start_date: Mapped[date] = mapped_column(Date)
     revealed_end_date: Mapped[date] = mapped_column(Date)
+
+
+class AlgoStrategy(Base):
+    __tablename__ = "algo_strategies"
+    key: Mapped[str] = mapped_column(String(32), primary_key=True)
+    display_name: Mapped[str] = mapped_column(String(64))
+    description: Mapped[str] = mapped_column(Text)
+
+
+class AlgoRun(Base):
+    __tablename__ = "algo_runs"
+    game_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("games.id"), primary_key=True
+    )
+    strategy_key: Mapped[str] = mapped_column(
+        String(32), ForeignKey("algo_strategies.key"), primary_key=True
+    )
+    final_nav: Mapped[float] = mapped_column(Float)
+    cagr: Mapped[float] = mapped_column(Float)
+    max_drawdown: Mapped[float] = mapped_column(Float)
+    total_charges: Mapped[float] = mapped_column(Float)
+    nav_curve_json: Mapped[str] = mapped_column(Text)
+    final_holdings_json: Mapped[str] = mapped_column(Text)
+    rebalance_log_json: Mapped[str] = mapped_column(Text)

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronRight, Flag } from "lucide-react";
+import { ChevronRight, Flag, Loader2 } from "lucide-react";
 import { api, type GameState, type InstrumentType, type Portfolio, type PriceWindow } from "@/lib/api";
 import { classPnl, inr, pct } from "@/lib/format";
 import { PriceChart } from "@/components/PriceChart";
@@ -25,6 +25,8 @@ export function Game() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [orderOpen, setOrderOpen] = useState(false);
   const [advancing, setAdvancing] = useState(false);
+  const [progressPhase, setProgressPhase] = useState<"advancing" | "finalizing" | null>(null);
+  const progressTimerRef = useRef<number | null>(null);
   const [bump, setBump] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,8 +69,31 @@ export function Game() {
     };
   }, [id, selected, bump]);
 
+  const startProgress = () => {
+    setProgressPhase("advancing");
+    if (progressTimerRef.current) window.clearTimeout(progressTimerRef.current);
+    progressTimerRef.current = window.setTimeout(() => {
+      setProgressPhase("finalizing");
+    }, 1500);
+  };
+
+  const stopProgress = () => {
+    if (progressTimerRef.current) {
+      window.clearTimeout(progressTimerRef.current);
+      progressTimerRef.current = null;
+    }
+    setProgressPhase(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) window.clearTimeout(progressTimerRef.current);
+    };
+  }, []);
+
   const advance = async () => {
     setAdvancing(true);
+    startProgress();
     try {
       const s = await api.next(id);
       setState(s);
@@ -83,6 +108,7 @@ export function Game() {
     } catch (e: any) {
       setError(e.message);
     } finally {
+      stopProgress();
       setAdvancing(false);
     }
   };
@@ -91,12 +117,14 @@ export function Game() {
     if (!confirm("End the game now and reveal the period? You cannot resume."))
       return;
     setAdvancing(true);
+    setProgressPhase("finalizing");
     try {
       await api.endNow(id);
       navigate(`/game/${id}/results`);
     } catch (e: any) {
       setError(e.message);
     } finally {
+      stopProgress();
       setAdvancing(false);
     }
   };
@@ -293,6 +321,8 @@ export function Game() {
         </div>
       </div>
 
+      {progressPhase && <ProgressOverlay phase={progressPhase} />}
+
       {selected && detail && (
         <OrderDialog
           open={orderOpen}
@@ -311,6 +341,31 @@ export function Game() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function ProgressOverlay({ phase }: { phase: "advancing" | "finalizing" }) {
+  const isFinalizing = phase === "finalizing";
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="card card-pad max-w-md w-full text-center flex flex-col items-center gap-4">
+        <Loader2 className="animate-spin text-accent" size={36} />
+        <div className="font-semibold text-lg">
+          {isFinalizing ? "Finalizing game…" : "Advancing turn…"}
+        </div>
+        <div className="text-sm text-muted leading-relaxed">
+          {isFinalizing ? (
+            <>
+              Running algo benchmarks (momentum, value, quality, low-vol, mean-reversion, risk-parity, equal-weight)
+              and computing NIFTY50 / NIFTY500 / FD comparisons over the full game window.
+              <div className="mt-2 text-xs">This can take 10–30 seconds — please don't close the tab.</div>
+            </>
+          ) : (
+            "Stepping to the next trading window and revaluing your portfolio."
+          )}
+        </div>
+      </div>
     </div>
   );
 }
